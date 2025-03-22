@@ -106,14 +106,15 @@ def createPost(payload: dict = Body(...)):
 
 @app.post("/createPost/v2")
 def createPostWithModel(newPost: Post):
-    post_dict = newPost.dict()
-    post_dict["id"] = randrange(0, 10000000)
-    my_posts.append(post_dict)
+    cursor.execute("""INSERT INTO posts (title, description, published) VALUES(%s, %s, %s) RETURNING *""",
+        (newPost.title,newPost.description, newPost.published))
+    new_post = cursor.fetchone()
+    conn.commit() # To save the changes to db
     return {
         "message": "Hey Prince!,\nA new post has been created!",
         "status": 201,
         "success": True,
-        "data": post_dict,
+        "data": new_post ,
     }
 
 
@@ -129,15 +130,10 @@ def getLatestPost():
 
 
 @app.get("/posts/{id}")
-def getPostById(id: int, response: Response):
-    post = find_post(id)
+def getPostById(id: int, response: Response): 
+    cursor.execute("SELECT * FROM posts WHERE id=%s", (id,))
+    post = cursor.fetchone() 
     if not post:
-        # response.status_code = status.HTTP_404_NOT_FOUND
-        # return {
-        #     "message": "Post not found",
-        #     "status": response.status_code,
-        #     "success": False
-        # }
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Post not Found"
         )
