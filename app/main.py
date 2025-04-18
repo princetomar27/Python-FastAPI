@@ -5,8 +5,21 @@ from fastapi import Body, FastAPI, HTTPException, Response, status
 from pydantic import BaseModel
 from psycopg2.extras import RealDictCursor
 import time
+from . import models
+from .database import SessionLocal, engine
+
+# import models from ./models.py
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 
 class Post(BaseModel):
