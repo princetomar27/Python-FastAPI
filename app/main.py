@@ -11,8 +11,7 @@ app = FastAPI()
 
 class Post(BaseModel):
     title: str
-    description: str
-    img: int
+    content: str
     published: bool = True
     ratings: Optional[int] = None
 
@@ -20,9 +19,7 @@ class Post(BaseModel):
 while True:
 
     try:
-        conn = psycopg2.connect(
-            host = 'localhost', database='fastapi', user='postgres', password='prince123',cursor_factory=RealDictCursor
-        )
+        conn = psycopg2.connect(host='localhost',port=5433,database='fastapi',user='postgres',password='prince123',cursor_factory=RealDictCursor)
         cursor = conn.cursor() # Open a cursor to executre SQL statements
         print("Database connection established !")
         break
@@ -36,7 +33,7 @@ while True:
 my_posts = [
     {
         "title": "Title Post 1",
-        "description": "Description Post 1",
+        "content": "content Post 1",
         "img": 1,
         "published": True,
         "ratings": 4,
@@ -44,7 +41,7 @@ my_posts = [
     },
     {
         "title": "Title Post 2",
-        "description": "Description Post 2",
+        "content": "content Post 2",
         "img": 2,
         "published": False,
         "ratings": 5,
@@ -98,7 +95,7 @@ def createPost(payload: dict = Body(...)):
         "success": True,
         "data": {
             "title": payload["name"],
-            "description": payload["description"],
+            "content": payload["content"],
             "img": payload["img"],
         },
     }
@@ -106,8 +103,8 @@ def createPost(payload: dict = Body(...)):
 
 @app.post("/createPost/v2")
 def createPostWithModel(newPost: Post):
-    cursor.execute("""INSERT INTO posts (title, description, published) VALUES(%s, %s, %s) RETURNING *""",
-        (newPost.title,newPost.description, newPost.published))
+    cursor.execute("""INSERT INTO posts (title, content, published) VALUES(%s, %s, %s) RETURNING *""",
+        (newPost.title,newPost.content, newPost.published))
     new_post = cursor.fetchone()
     conn.commit() # To save the changes to db
     return {
@@ -153,7 +150,7 @@ def deletePost(id: int):
 
 @app.put("/posts/{id}")
 def update_post(id: int, post: Post):
-    cursor.execute("""UPDATE posts SET title=%s, description=%s,published=%s WHERE id=%s RETURNING *""", (post.title, post.description, post.published,id))
+    cursor.execute("""UPDATE posts SET title=%s, content=%s,published=%s WHERE id=%s RETURNING *""", (post.title, post.content, post.published,id))
     updated_post = cursor.fetchone()
    
     if updated_post == None:
