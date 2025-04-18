@@ -76,16 +76,17 @@ async def root():
 
 @app.get("/sqlalchemy")
 def test_posts(db: Session =Depends(get_db)):
+
+    posts = db.query(models.Post).all()
     return{
-        "status":"Success"
+        "status":"Success",
+        "data": posts,
     }
 
 
 @app.get("/posts")
-def get_posts():
-    cursor.execute("""SELECT * FROM posts """)
-    posts =cursor.fetchall()
-    print(posts)
+def get_posts(db: Session=Depends(get_db)):
+    posts =db.query(models.Post).all()
     return {  
         "data": posts,
     }
@@ -116,11 +117,16 @@ def createPost(payload: dict = Body(...)):
 
 
 @app.post("/createPost/v2")
-def createPostWithModel(newPost: Post):
-    cursor.execute("""INSERT INTO posts (title, content, published) VALUES(%s, %s, %s) RETURNING *""",
-        (newPost.title,newPost.content, newPost.published))
-    new_post = cursor.fetchone()
-    conn.commit() # To save the changes to db
+def createPostWithModel(newPost: Post, db: Session=Depends(get_db)):
+    # cursor.execute("""INSERT INTO posts (title, content, published) VALUES(%s, %s, %s) RETURNING *""",
+    #     (newPost.title,newPost.content, newPost.published))
+    # new_post = cursor.fetchone()
+    # conn.commit() # To save the changes to db
+
+    new_post = models.Post(title=newPost.title, content=newPost.content, published=newPost.published) 
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
     return {
         "message": "Hey Prince!,\nA new post has been created!",
         "status": 201,
