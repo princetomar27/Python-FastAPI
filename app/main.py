@@ -1,12 +1,12 @@
 from random import randrange
-from typing import Optional
+from typing import Optional,List
 import psycopg2
 from fastapi import Body, FastAPI, HTTPException, Response, status, Depends
 from pydantic import BaseModel
 from psycopg2.extras import RealDictCursor
 import time
 from sqlalchemy.orm import Session
-from . import models
+from . import models,schemas
 from .database import  engine, get_db
 
 
@@ -14,13 +14,6 @@ from .database import  engine, get_db
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-
-
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = True
 
 # Setup postgres db connection
 while True:
@@ -73,22 +66,12 @@ def find_index_post(id):
 async def root():
     return {"message": "Hey Prince!"}
 
-@app.get("/sqlalchemy")
-def test_posts(db: Session =Depends(get_db)):
-
-    posts = db.query(models.Post).all()
-    return{
-        "status":"Success",
-        "data": posts,
-    }
 
 
-@app.get("/posts")
+@app.get("/posts",response_model=List[schemas.Post])
 def get_posts(db: Session=Depends(get_db)):
     posts =db.query(models.Post).all()
-    return {  
-        "data": posts,
-    }
+    return   posts
 
 
 @app.get("/admin")
@@ -115,8 +98,8 @@ def createPost(payload: dict = Body(...)):
     }
 
 
-@app.post("/createPost/v2")
-def createPostWithModel(newPost: Post, db: Session=Depends(get_db)):
+@app.post("/createPost/v2",status_code=status.HTTP_201_CREATED,  response_model = schemas.CustomPostResponse)
+def createPostWithModel(newPost: schemas.PostCreate, db: Session=Depends(get_db)):
     # cursor.execute("""INSERT INTO posts (title, content, published) VALUES(%s, %s, %s) RETURNING *""",
     #     (newPost.title,newPost.content, newPost.published))
     # new_post = cursor.fetchone()
@@ -129,7 +112,7 @@ def createPostWithModel(newPost: Post, db: Session=Depends(get_db)):
         "message": "Hey Prince!,\nA new post has been created!",
         "status": 201,
         "success": True,
-        "data": new_post ,
+        "data": new_post,
     }
 
 
@@ -144,7 +127,7 @@ def getLatestPost():
     }
 
 
-@app.get("/posts/{id}")
+@app.get("/posts/{id}", response_model=schemas.Post)
 def getPostById(id: int, db:Session=Depends(get_db)): 
     # cursor.execute("SELECT * FROM posts WHERE id=%s", str(id,))
     # post = cursor.fetchone() 
@@ -158,7 +141,7 @@ def getPostById(id: int, db:Session=Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Post not Found"
         )
-    return {"post_detail": post}
+    return post
 
 
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -177,8 +160,8 @@ def deletePost(id: int,db:Session=Depends(get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT,)
 
 
-@app.put("/posts/{id}")
-def update_post(id: int, post: Post, db:Session=Depends(get_db)):
+@app.put("/posts/{id}",response_model=schemas.CustomPostResponse)
+def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db)):
     # cursor.execute("""UPDATE posts SET title=%s, content=%s,published=%s WHERE id=%s RETURNING *""", (post.title, post.content, post.published,id))
     # updated_post = cursor.fetchone()
     updated_post_query = db.query(models.Post).filter(models.Post.id == id)
