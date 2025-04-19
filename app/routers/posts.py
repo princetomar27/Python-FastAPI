@@ -5,15 +5,14 @@ from sqlalchemy.orm import Session
 from ..database import   get_db
 
 router = APIRouter(
-    prefix="/posts"
+    prefix="/posts",
+    tags=["Posts"]
 )
 
 @router.get("/",response_model=List[schemas.Post])
 def get_posts(db: Session=Depends(get_db)):
     posts =db.query(models.Post).all()
     return   posts
-
-
 
 @router.post("/createPost", status_code=201)
 def createPost(payload: dict = Body(...)):
@@ -47,7 +46,6 @@ def createPostWithModel(newPost: schemas.PostCreate, db: Session=Depends(get_db)
         "data": new_post,
     }
 
-
 @router.get("/{id}", response_model=schemas.Post)
 def getPostById(id: int, db:Session=Depends(get_db)): 
     # cursor.execute("SELECT * FROM posts WHERE id=%s", str(id,))
@@ -79,7 +77,6 @@ def deletePost(id: int,db:Session=Depends(get_db)):
 
    
     return Response(status_code=status.HTTP_204_NO_CONTENT,)
-
 
 @router.put("/{id}",response_model=schemas.CustomPostResponse)
 def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db)):

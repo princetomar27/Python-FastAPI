@@ -5,7 +5,7 @@ from psycopg2.extras import RealDictCursor
 import time
 from .database import engine
 from . import models,schemas, utils
-from .routers import posts, user
+from .routers import posts, user,auth
 
 # import models from ./models.py
 models.Base.metadata.create_all(bind=engine)
@@ -65,3 +65,4 @@ async def root():
 
 app.include_router(posts.router)
 app.include_router(user.router)
+app.include_router(auth.router)
