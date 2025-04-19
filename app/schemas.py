@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel,EmailStr
 from datetime import datetime
  
 
@@ -23,3 +23,20 @@ class CustomPostResponse(BaseModel):
     status: int
     success: bool
     data: Post
+
+class UserBase(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserOut(BaseModel):
+    id: int
+    email: EmailStr
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
