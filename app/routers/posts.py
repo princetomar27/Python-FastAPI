@@ -1,4 +1,4 @@
-from .. import models,schemas
+from .. import models,schemas,oauth2
 from typing import List
 from fastapi import Body,  HTTPException, Response, status, Depends, APIRouter
 from sqlalchemy.orm import Session
@@ -10,9 +10,9 @@ router = APIRouter(
 )
 
 @router.get("/",response_model=List[schemas.Post])
-def get_posts(db: Session=Depends(get_db)):
+def get_posts(db: Session=Depends(get_db), user_id: int = Depends(oauth2.get_current_user)):
     posts =db.query(models.Post).all()
-    return   posts
+    return posts
 
 @router.post("/createPost", status_code=201)
 def createPost(payload: dict = Body(...)):
@@ -30,11 +30,8 @@ def createPost(payload: dict = Body(...)):
 
 
 @router.post("/createPost/v2",status_code=status.HTTP_201_CREATED,  response_model = schemas.CustomPostResponse)
-def createPostWithModel(newPost: schemas.PostCreate, db: Session=Depends(get_db)):
-    # cursor.execute("""INSERT INTO posts (title, content, published) VALUES(%s, %s, %s) RETURNING *""",
-    #     (newPost.title,newPost.content, newPost.published))
-    # new_post = cursor.fetchone()
-    # conn.commit() # To save the changes to db
+def createPostWithModel(newPost: schemas.PostCreate, db: Session=Depends(get_db), user_id: int = Depends(oauth2.get_current_user)):
+    print("user Id : ",user_id)
     new_post = models.Post(**newPost.dict()) 
     db.add(new_post)
     db.commit()
@@ -47,7 +44,7 @@ def createPostWithModel(newPost: schemas.PostCreate, db: Session=Depends(get_db)
     }
 
 @router.get("/{id}", response_model=schemas.Post)
-def getPostById(id: int, db:Session=Depends(get_db)): 
+def getPostById(id: int, db:Session=Depends(get_db), user_id: int = Depends(oauth2.get_current_user)): 
     # cursor.execute("SELECT * FROM posts WHERE id=%s", str(id,))
     # post = cursor.fetchone() 
     # if not post:
@@ -64,7 +61,7 @@ def getPostById(id: int, db:Session=Depends(get_db)):
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def deletePost(id: int,db:Session=Depends(get_db)):
+def deletePost(id: int,db:Session=Depends(get_db), user_id: int = Depends(oauth2.get_current_user)):
     # cursor.execute("""DELETE FROM posts WHERE id=%s RETURNING *""", (id,))
     # deletedPost = cursor.fetchone()
     # conn.commit()
@@ -79,7 +76,7 @@ def deletePost(id: int,db:Session=Depends(get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT,)
 
 @router.put("/{id}",response_model=schemas.CustomPostResponse)
-def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db)):
+def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db), user_id: int = Depends(oauth2.get_current_user)):
     # cursor.execute("""UPDATE posts SET title=%s, content=%s,published=%s WHERE id=%s RETURNING *""", (post.title, post.content, post.published,id))
     # updated_post = cursor.fetchone()
     updated_post_query = db.query(models.Post).filter(models.Post.id == id)

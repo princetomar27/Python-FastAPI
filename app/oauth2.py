@@ -29,10 +29,10 @@ def create_access_token(data: dict):
 def verify_access_token(access_token: str, credentials_exception):
     try:
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("user_id")
-        if not user_id:
+        id: int = payload.get("user_id")
+        if not id:
             raise credentials_exception
-        token_data = schemas.TokenData(id=user_id)
+        token_data = schemas.TokenData(id=id)
     except JWTError:
         raise credentials_exception
     return token_data
