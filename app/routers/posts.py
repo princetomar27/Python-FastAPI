@@ -10,7 +10,7 @@ router = APIRouter(
 )
 
 @router.get("/",response_model=List[schemas.Post])
-def get_posts(db: Session=Depends(get_db), user_id: int = Depends(oauth2.get_current_user)):
+def get_posts(db: Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     posts =db.query(models.Post).all()
     return posts
 
@@ -30,9 +30,9 @@ def createPost(payload: dict = Body(...)):
 
 
 @router.post("/createPost/v2",status_code=status.HTTP_201_CREATED,  response_model = schemas.CustomPostResponse)
-def createPostWithModel(newPost: schemas.PostCreate, db: Session=Depends(get_db), user_id: int = Depends(oauth2.get_current_user)):
-    print("user Id : ",user_id)
-    new_post = models.Post(**newPost.dict()) 
+def createPostWithModel(newPost: schemas.PostCreate, db: Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    print("user Id : ",current_user)
+    new_post = models.Post(owner_id=current_user.id ,**newPost.dict()) 
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
@@ -44,7 +44,7 @@ def createPostWithModel(newPost: schemas.PostCreate, db: Session=Depends(get_db)
     }
 
 @router.get("/{id}", response_model=schemas.Post)
-def getPostById(id: int, db:Session=Depends(get_db), user_id: int = Depends(oauth2.get_current_user)): 
+def getPostById(id: int, db:Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)): 
     # cursor.execute("SELECT * FROM posts WHERE id=%s", str(id,))
     # post = cursor.fetchone() 
     # if not post:
@@ -61,7 +61,7 @@ def getPostById(id: int, db:Session=Depends(get_db), user_id: int = Depends(oaut
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def deletePost(id: int,db:Session=Depends(get_db), user_id: int = Depends(oauth2.get_current_user)):
+def deletePost(id: int,db:Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     # cursor.execute("""DELETE FROM posts WHERE id=%s RETURNING *""", (id,))
     # deletedPost = cursor.fetchone()
     # conn.commit()
@@ -76,7 +76,7 @@ def deletePost(id: int,db:Session=Depends(get_db), user_id: int = Depends(oauth2
     return Response(status_code=status.HTTP_204_NO_CONTENT,)
 
 @router.put("/{id}",response_model=schemas.CustomPostResponse)
-def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db), user_id: int = Depends(oauth2.get_current_user)):
+def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     # cursor.execute("""UPDATE posts SET title=%s, content=%s,published=%s WHERE id=%s RETURNING *""", (post.title, post.content, post.published,id))
     # updated_post = cursor.fetchone()
     updated_post_query = db.query(models.Post).filter(models.Post.id == id)
