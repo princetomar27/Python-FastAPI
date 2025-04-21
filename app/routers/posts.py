@@ -1,5 +1,5 @@
 from .. import models,schemas,oauth2
-from typing import List
+from typing import List,Optional
 from fastapi import Body,  HTTPException, Response, status, Depends, APIRouter
 from sqlalchemy.orm import Session
 from ..database import   get_db
@@ -10,8 +10,9 @@ router = APIRouter(
 )
 
 @router.get("/",response_model=List[schemas.Post])
-def get_posts(db: Session=Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
-    posts =db.query(models.Post).all()
+def get_posts(db: Session=Depends(get_db), current_user:int = Depends(oauth2.get_current_user),
+              limit: int=10, skip: int=0, search: Optional[str]=""):
+    posts =db.query(models.Post).filter(models.Post.owner_id == current_user.id).filter(models.Post.title.contains(search)).limit(limit=limit).offset(skip).all()
     return posts
 
 @router.post("/createPost", status_code=201)
@@ -69,6 +70,12 @@ def deletePost(id: int,db:Session=Depends(get_db), current_user: int = Depends(o
     if deletedPost.first() == None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with {id} not Found")
+    
+    if deletedPost.owner_id != oauth2.get_current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized to perform requested action"
+        )
+    
     deletedPost.delete(synchronize_session=False)
     db.commit()
 
@@ -87,6 +94,10 @@ def update_post(id: int, post: schemas.PostCreate, db:Session=Depends(get_db), c
             status_code=status.HTTP_404_NOT_FOUND, detail="Post not Found"
         )
     
+    if updatedPost.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized to perform requested action"
+        )
     updated_post_query.update(post.dict(), synchronize_session=False)
     db.commit()
 

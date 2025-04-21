@@ -3,29 +3,6 @@ from datetime import datetime
 from typing import Optional
  
 
-class PostBase(BaseModel):
-    title: str
-    content: str
-    published: bool=True
-
-
-class PostCreate(PostBase):
-    pass
-
-class Post(PostBase):
-    id: int
-    created_at: datetime
-    owner_id: int
-
-    class Config:
-        from_attributes = True
-
-class CustomPostResponse(BaseModel):
-    message: str
-    status: int
-    success: bool
-    data: Post
-
 class UserBase(BaseModel):
     email: EmailStr
     password: str
@@ -46,6 +23,31 @@ class UserOut(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+class PostBase(BaseModel):
+    title: str
+    content: str
+    published: bool=True
+
+
+class PostCreate(PostBase):
+    pass
+
+class Post(PostBase):
+    id: int
+    created_at: datetime
+    owner_id: int
+    owner: UserOut
+
+    class Config:
+        from_attributes = True
+
+class CustomPostResponse(BaseModel):
+    message: str
+    status: int
+    success: bool
+    data: Post
+
 
 class Token(BaseModel):
     access_token: str
